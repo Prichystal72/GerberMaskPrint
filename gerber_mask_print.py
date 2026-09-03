@@ -818,6 +818,13 @@ class MainWindow(QMainWindow):
         # Convert to grayscale
         img_gray = img.convert('L')
 
+        # Stretch contrast so the darkest/brightest pixels actually rendered map to 0/255.
+        # Different Gerber layer types (mask, silkscreen, copper, ...) get rendered by
+        # pygerber in different default colors with very different grayscale luminance
+        # (e.g. a silkscreen render can top out around 60/255 instead of 255) - without this,
+        # the same threshold value can work for one layer and make another vanish entirely.
+        img_gray = ImageOps.autocontrast(img_gray)
+
         # Apply the threshold - anything above threshold -> white, below -> black
         img_bw = img_gray.point(lambda x: 255 if x >= self.threshold_value else 0)
 
@@ -962,8 +969,13 @@ class MainWindow(QMainWindow):
     def update_selection_toolbar(self):
         if not hasattr(self, "selection_toolbar"):
             return
-        selected_items = [item for item in self.scene.selectedItems() if isinstance(item, MotifItem)]
-        self.selection_toolbar.reposition(selected_items)
+        try:
+            selected_items = [item for item in self.scene.selectedItems() if isinstance(item, MotifItem)]
+            self.selection_toolbar.reposition(selected_items)
+        except RuntimeError:
+            # The underlying Qt C++ objects (scene/toolbar) can already be torn down if this
+            # fires while the window is closing - nothing meaningful to do in that case.
+            pass
 
     def delete_selected(self):
         selected_items = self.scene.selectedItems()
