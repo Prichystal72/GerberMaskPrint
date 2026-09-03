@@ -589,12 +589,16 @@ class MainWindow(QMainWindow):
         export_bmp_btn = QPushButton("🖼️ Export to BMP")
         export_bmp_btn.clicked.connect(self.export_bmp)
 
+        export_dxf_btn = QPushButton("📐 Export Silkscreen to DXF")
+        export_dxf_btn.clicked.connect(self.export_dxf)
+
         print_btn = QPushButton("🖨️ Print")
         print_btn.setObjectName("primaryButton")
         print_btn.clicked.connect(self.print_page)
 
         export_layout.addWidget(export_btn)
         export_layout.addWidget(export_bmp_btn)
+        export_layout.addWidget(export_dxf_btn)
         export_layout.addWidget(print_btn)
         export_group.setLayout(export_layout)
 
@@ -1274,6 +1278,33 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Export", f"PDF export successful.\nFile: {file_path}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error exporting PDF: {e}")
+
+    def export_dxf(self):
+        """Export component reference/value silkscreen text from a KiCad .kicad_pcb
+        file to a DXF file with real vector glyph outlines (front and back
+        silkscreen on separate layers). Independent of any currently loaded
+        Gerber files - Gerber has no text semantics to reconstruct fonts from,
+        so this reads the KiCad board file directly instead."""
+        pcb_path, _ = QFileDialog.getOpenFileName(self, "Select KiCad PCB File", "", "KiCad PCB Files (*.kicad_pcb)")
+        if not pcb_path:
+            return
+
+        dxf_path, _ = QFileDialog.getSaveFileName(self, "Export Silkscreen Text as DXF", "", "DXF Files (*.dxf)")
+        if not dxf_path:
+            return
+
+        try:
+            from kicad_silkscreen_dxf import export_silkscreen_to_dxf
+            n_front, n_back = export_silkscreen_to_dxf(pcb_path, dxf_path)
+            QMessageBox.information(
+                self, "Export",
+                f"DXF export successful.\nFile: {dxf_path}\n"
+                f"Front silkscreen texts: {n_front}\nBack silkscreen texts: {n_back}"
+            )
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            QMessageBox.critical(self, "Error", f"Error exporting DXF: {e}")
 
     def export_bmp(self):
         from PySide6.QtWidgets import QInputDialog
