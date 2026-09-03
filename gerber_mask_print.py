@@ -1295,11 +1295,12 @@ class MainWindow(QMainWindow):
 
         try:
             from kicad_silkscreen_dxf import export_silkscreen_to_dxf
-            n_front, n_back = export_silkscreen_to_dxf(pcb_path, dxf_path)
+            n_front, n_back, n_edges = export_silkscreen_to_dxf(pcb_path, dxf_path)
             QMessageBox.information(
                 self, "Export",
                 f"DXF export successful.\nFile: {dxf_path}\n"
-                f"Front silkscreen texts: {n_front}\nBack silkscreen texts: {n_back}"
+                f"Front silkscreen texts: {n_front}\nBack silkscreen texts: {n_back}\n"
+                f"Board outline segments: {n_edges}"
             )
         except Exception as e:
             import traceback
